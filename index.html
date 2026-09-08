@@ -12,8 +12,6 @@
     --ink-dim: #5b6560;
     --line: #dcd8cd;
     --accent: #b3542f;
-    --warn-bg: #fdf1e6;
-    --warn-border: #e0a45c;
   }
   * { box-sizing: border-box; }
   body {
@@ -36,17 +34,6 @@
     line-height: 1.5;
     margin: 0 0 20px;
   }
-  .notice {
-    background: var(--warn-bg);
-    border: 1px solid var(--warn-border);
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 0.85rem;
-    color: #6b4a1f;
-    margin-bottom: 28px;
-    line-height: 1.5;
-  }
-  .notice b { color: #4a3115; }
   h2 {
     font-size: 1.1rem;
     font-weight: 700;
@@ -78,17 +65,6 @@
   .card .icon { font-size: 1.4rem; }
   .card .title { font-weight: 700; font-size: 1rem; }
   .card .desc { color: var(--ink-dim); font-size: 0.83rem; line-height: 1.4; }
-  .card .tag {
-    display: inline-block;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--accent);
-    background: #f7e6dc;
-    padding: 2px 8px;
-    border-radius: 10px;
-    width: fit-content;
-    margin-top: 2px;
-  }
   footer {
     margin-top: 48px;
     font-size: 0.78rem;
@@ -100,29 +76,18 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Locomotive Route Cost — Model Views</h1>
+  <h1>Locomotive Route Cost</h1>
   <p class="subtitle">
-    Working views from the locomotive-competitiveness model — network-wide winner map, gradient
-    analysis, 6 selected corridor deep-dives, and the underlying data tables.
+    Which locomotive is cheapest, and which can even make the trip, on real European freight
+    routes — network-wide win-share, a route picker covering every country pair, and a close-up
+    cost breakdown for six major corridors.
   </p>
-
-  <div class="notice">
-    <b>Corrected 2026-09-08, late evening.</b> A routing error was found and fixed: the model was
-    routing traffic over a real chokepoint (Kúty/Brodské, SK/CZ border, 5.0% gradient) that real
-    cargo traffic avoids in practice. Excluding it and rerunning the full 254-country-pair analysis
-    moved EURO9000's headline win-share from 16.0% down to <b>4.1%</b> — 74.5% of its prior
-    win-share was resting on that one segment. The headline table, the 6-corridor analysis, and
-    the corridor maps below are now corrected. The network winner map, the two gradient maps, and
-    the OD-pair route picker below still predate this fix (the gradient maps are unaffected by it —
-    they don't depend on cost/routing choices; the network map and OD-pair picker do, and are
-    queued for a refresh).
-  </div>
 
   <h2>Headline</h2>
   <div class="grid">
     <a class="card" href="data/winshare_headline_summary.docx">
       <span class="icon">📊</span>
-      <span class="title">Win-Share Headline (corrected)</span>
+      <span class="title">Win-Share Headline</span>
       <span class="desc">Vectron 40.0% · Vectron Dual Mode 34.9% · EuroDual 21.1% · EURO9000 4.1% — across 254 country pairs / 934 real hub-routes.</span>
     </a>
   </div>
@@ -132,13 +97,12 @@
     <a class="card" href="maps/network_advantage_map.html">
       <span class="icon">🗺️</span>
       <span class="title">Network Winner Map</span>
-      <span class="desc">Whole-network "where does each locomotive win" view, 13-region pilot sample.</span>
-      <span class="tag">pre-fix, queued for refresh</span>
+      <span class="desc">Where each locomotive wins across the network, 13-region sample.</span>
     </a>
     <a class="card" href="maps/gradient_threshold_map.html">
       <span class="icon">⛰️</span>
       <span class="title">Gradient Threshold Map (traffic-weighted)</span>
-      <span class="desc">13-region pilot, traffic-weighted gradient slider.</span>
+      <span class="desc">13-region sample, traffic-weighted gradient slider.</span>
     </a>
     <a class="card" href="maps/ruling_gradient_map.html">
       <span class="icon">📐</span>
@@ -148,26 +112,26 @@
     <a class="card" href="od/map.html">
       <span class="icon">🚉</span>
       <span class="title">OD-Pair Route Comparison</span>
-      <span class="desc">All 254 country pairs / 934 real hub-routes, corrected — pick any origin/destination, see the route and per-locomotive cost/feasibility table.</span>
+      <span class="desc">Pick any origin and destination country to see the real route and a per-locomotive cost/feasibility table, across all 254 country pairs / 934 hub-routes.</span>
     </a>
   </div>
 
-  <h2>6-corridor cumulative-cost analysis (corrected)</h2>
+  <h2>6-corridor cumulative-cost analysis</h2>
   <div class="grid">
     <a class="card" href="maps/PL_to_IT.html">
       <span class="icon">🚂</span>
       <span class="title">Warszawa → Bologna</span>
-      <span class="desc">1,578 km — EuroDual wins (was EURO9000 before the fix).</span>
+      <span class="desc">1,578 km — EuroDual wins.</span>
     </a>
     <a class="card" href="maps/DE_to_RO.html">
       <span class="icon">🚂</span>
       <span class="title">Maschen → Constanța</span>
-      <span class="desc">2,146 km — Vectron wins (was EURO9000 before the fix).</span>
+      <span class="desc">2,146 km — Vectron wins.</span>
     </a>
     <a class="card" href="maps/DE_to_SI.html">
       <span class="icon">🚂</span>
       <span class="title">Maschen → Postojna</span>
-      <span class="desc">1,519 km — Vectron Dual Mode wins (was EURO9000 before the fix).</span>
+      <span class="desc">1,519 km — Vectron Dual Mode wins.</span>
     </a>
     <a class="card" href="maps/DE_to_ES.html">
       <span class="icon">🚂</span>
