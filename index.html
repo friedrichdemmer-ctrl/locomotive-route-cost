@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EURO9000 Diligence — Model Views</title>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --surface: #ffffff;
+    --ink: #1c2321;
+    --ink-dim: #5b6560;
+    --line: #dcd8cd;
+    --accent: #b3542f;
+    --warn-bg: #fdf1e6;
+    --warn-border: #e0a45c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 32px 40px 60px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    color: var(--ink-dim);
+    font-size: 0.98rem;
+    max-width: 70ch;
+    line-height: 1.5;
+    margin: 0 0 20px;
+  }
+  .notice {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: #6b4a1f;
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+  .notice b { color: #4a3115; }
+  h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 32px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .card:hover {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+  }
+  .card .icon { font-size: 1.4rem; }
+  .card .title { font-weight: 700; font-size: 1rem; }
+  .card .desc { color: var(--ink-dim); font-size: 0.83rem; line-height: 1.4; }
+  .card .tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: #f7e6dc;
+    padding: 2px 8px;
+    border-radius: 10px;
+    width: fit-content;
+    margin-top: 2px;
+  }
+  footer {
+    margin-top: 48px;
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>EURO9000 Diligence — Model Views</h1>
+  <p class="subtitle">
+    Working views from the European Loc Pool locomotive-competitiveness model — network-wide
+    winner map, gradient analysis, 6 selected corridor deep-dives, and the underlying data tables.
+  </p>
+
+  <div class="notice">
+    <b>Snapshot as of 2026-09-08, evening.</b> A routing fix is currently re-running in the
+    background (excluding a real chokepoint — Kúty/Brodské on the SK/CZ border — that real cargo
+    traffic avoids but the model's shortest-path routing did not). That fix is expected to move
+    EURO9000's headline win-share down substantially (it was resting on this one segment for ~75%
+    of its wins). The maps and figures below predate that fix and will be refreshed once it
+    completes — treat today's corridor/network numbers as provisional.
+  </div>
+
+  <h2>Network-wide views</h2>
+  <div class="grid">
+    <a class="card" href="maps/network_advantage_map.html">
+      <span class="icon">🗺️</span>
+      <span class="title">Network Winner Map</span>
+      <span class="desc">Whole-network "where does each locomotive win" view, 13-region pilot sample.</span>
+    </a>
+    <a class="card" href="maps/gradient_threshold_map.html">
+      <span class="icon">⛰️</span>
+      <span class="title">Gradient Threshold Map (traffic-weighted)</span>
+      <span class="desc">13-region pilot, traffic-weighted gradient slider.</span>
+    </a>
+    <a class="card" href="maps/ruling_gradient_map.html">
+      <span class="icon">📐</span>
+      <span class="title">Gradient Threshold Map (whole network)</span>
+      <span class="desc">Full European network, length-weighted — every RINF section with resolved gradient data.</span>
+    </a>
+    <a class="card" href="maps/od_pair_map.html">
+      <span class="icon">🚉</span>
+      <span class="title">OD-Pair Route Comparison</span>
+      <span class="desc">Curated corridor picker with route map and cost table.</span>
+      <span class="tag">not yet refreshed to current economics</span>
+    </a>
+  </div>
+
+  <h2>6-corridor cumulative-cost analysis</h2>
+  <div class="grid">
+    <a class="card" href="maps/PL_to_IT.html">
+      <span class="icon">🚂</span>
+      <span class="title">Warszawa → Bologna</span>
+      <span class="desc">1,577 km — EURO9000-won corridor (pre-fix).</span>
+    </a>
+    <a class="card" href="maps/DE_to_RO.html">
+      <span class="icon">🚂</span>
+      <span class="title">Maschen → Constanța</span>
+      <span class="desc">2,124 km — EURO9000-won corridor (pre-fix).</span>
+    </a>
+    <a class="card" href="maps/DE_to_SI.html">
+      <span class="icon">🚂</span>
+      <span class="title">Maschen → Postojna</span>
+      <span class="desc">1,519 km — EURO9000-won corridor (pre-fix).</span>
+    </a>
+    <a class="card" href="maps/DE_to_ES.html">
+      <span class="icon">🚂</span>
+      <span class="title">Maschen → Barcelona</span>
+      <span class="desc">3,612 km — EuroDual-won corridor.</span>
+    </a>
+    <a class="card" href="maps/FR_to_ES.html">
+      <span class="icon">🚂</span>
+      <span class="title">Moselle → Barcelona</span>
+      <span class="desc">1,748 km — EuroDual-won corridor.</span>
+    </a>
+    <a class="card" href="maps/RO_to_IT.html">
+      <span class="icon">🚂</span>
+      <span class="title">Constanța → Bologna</span>
+      <span class="desc">2,100 km — EuroDual-won corridor.</span>
+    </a>
+    <a class="card" href="data/corridor_map.png">
+      <span class="icon">🖼️</span>
+      <span class="title">All 6 Corridors — Overview Image</span>
+      <span class="desc">Static map, all 6 routes together with real chokepoints marked.</span>
+    </a>
+  </div>
+
+  <h2>Data downloads</h2>
+  <div class="grid">
+    <a class="card" href="data/cumulative_cost_curves.xlsx">
+      <span class="icon">📊</span>
+      <span class="title">Cumulative Cost Workbook</span>
+      <span class="desc">Per-segment cost curves and failure reasons for all 6 corridors × 4 locomotives.</span>
+    </a>
+    <a class="card" href="data/european_rail_network_gradient_thresholds.xlsx">
+      <span class="icon">📊</span>
+      <span class="title">Network Gradient Table</span>
+      <span class="desc">0.5% increments, whole-network length share.</span>
+    </a>
+    <a class="card" href="data/gradient_map_1.6pct.png">
+      <span class="icon">🖼️</span>
+      <span class="title">1.6% Gradient Map</span>
+      <span class="desc">Whole network at the Vectron-helper threshold.</span>
+    </a>
+  </div>
+
+  <footer>
+    European Loc Pool locomotive-competitiveness model — internal diligence working views, not for
+    external distribution. Generated 2026-09-08.
+  </footer>
+</div>
+</body>
+</html>
