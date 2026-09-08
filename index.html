@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EURO9000 Diligence — Model Views</title>
+<title>Locomotive Route Cost</title>
 <style>
   :root {
     --bg: #f7f5f0;
@@ -100,19 +100,31 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>EURO9000 Diligence — Model Views</h1>
+  <h1>Locomotive Route Cost — Model Views</h1>
   <p class="subtitle">
-    Working views from the European Loc Pool locomotive-competitiveness model — network-wide
-    winner map, gradient analysis, 6 selected corridor deep-dives, and the underlying data tables.
+    Working views from the locomotive-competitiveness model — network-wide winner map, gradient
+    analysis, 6 selected corridor deep-dives, and the underlying data tables.
   </p>
 
   <div class="notice">
-    <b>Snapshot as of 2026-09-08, evening.</b> A routing fix is currently re-running in the
-    background (excluding a real chokepoint — Kúty/Brodské on the SK/CZ border — that real cargo
-    traffic avoids but the model's shortest-path routing did not). That fix is expected to move
-    EURO9000's headline win-share down substantially (it was resting on this one segment for ~75%
-    of its wins). The maps and figures below predate that fix and will be refreshed once it
-    completes — treat today's corridor/network numbers as provisional.
+    <b>Corrected 2026-09-08, late evening.</b> A routing error was found and fixed: the model was
+    routing traffic over a real chokepoint (Kúty/Brodské, SK/CZ border, 5.0% gradient) that real
+    cargo traffic avoids in practice. Excluding it and rerunning the full 254-country-pair analysis
+    moved EURO9000's headline win-share from 16.0% down to <b>4.1%</b> — 74.5% of its prior
+    win-share was resting on that one segment. The headline table, the 6-corridor analysis, and
+    the corridor maps below are now corrected. The network winner map, the two gradient maps, and
+    the OD-pair route picker below still predate this fix (the gradient maps are unaffected by it —
+    they don't depend on cost/routing choices; the network map and OD-pair picker do, and are
+    queued for a refresh).
+  </div>
+
+  <h2>Headline</h2>
+  <div class="grid">
+    <a class="card" href="data/winshare_headline_summary.docx">
+      <span class="icon">📊</span>
+      <span class="title">Win-Share Headline (corrected)</span>
+      <span class="desc">Vectron 40.0% · Vectron Dual Mode 34.9% · EuroDual 21.1% · EURO9000 4.1% — across 254 country pairs / 934 real hub-routes.</span>
+    </a>
   </div>
 
   <h2>Network-wide views</h2>
@@ -121,6 +133,7 @@
       <span class="icon">🗺️</span>
       <span class="title">Network Winner Map</span>
       <span class="desc">Whole-network "where does each locomotive win" view, 13-region pilot sample.</span>
+      <span class="tag">pre-fix, queued for refresh</span>
     </a>
     <a class="card" href="maps/gradient_threshold_map.html">
       <span class="icon">⛰️</span>
@@ -136,41 +149,41 @@
       <span class="icon">🚉</span>
       <span class="title">OD-Pair Route Comparison</span>
       <span class="desc">Curated corridor picker with route map and cost table.</span>
-      <span class="tag">not yet refreshed to current economics</span>
+      <span class="tag">pre-fix, rebuild running overnight</span>
     </a>
   </div>
 
-  <h2>6-corridor cumulative-cost analysis</h2>
+  <h2>6-corridor cumulative-cost analysis (corrected)</h2>
   <div class="grid">
     <a class="card" href="maps/PL_to_IT.html">
       <span class="icon">🚂</span>
       <span class="title">Warszawa → Bologna</span>
-      <span class="desc">1,577 km — EURO9000-won corridor (pre-fix).</span>
+      <span class="desc">1,578 km — EuroDual wins (was EURO9000 before the fix).</span>
     </a>
     <a class="card" href="maps/DE_to_RO.html">
       <span class="icon">🚂</span>
       <span class="title">Maschen → Constanța</span>
-      <span class="desc">2,124 km — EURO9000-won corridor (pre-fix).</span>
+      <span class="desc">2,146 km — Vectron wins (was EURO9000 before the fix).</span>
     </a>
     <a class="card" href="maps/DE_to_SI.html">
       <span class="icon">🚂</span>
       <span class="title">Maschen → Postojna</span>
-      <span class="desc">1,519 km — EURO9000-won corridor (pre-fix).</span>
+      <span class="desc">1,519 km — Vectron Dual Mode wins (was EURO9000 before the fix).</span>
     </a>
     <a class="card" href="maps/DE_to_ES.html">
       <span class="icon">🚂</span>
       <span class="title">Maschen → Barcelona</span>
-      <span class="desc">3,612 km — EuroDual-won corridor.</span>
+      <span class="desc">3,612 km — EuroDual wins.</span>
     </a>
     <a class="card" href="maps/FR_to_ES.html">
       <span class="icon">🚂</span>
       <span class="title">Moselle → Barcelona</span>
-      <span class="desc">1,748 km — EuroDual-won corridor.</span>
+      <span class="desc">1,748 km — EuroDual wins.</span>
     </a>
     <a class="card" href="maps/RO_to_IT.html">
       <span class="icon">🚂</span>
       <span class="title">Constanța → Bologna</span>
-      <span class="desc">2,100 km — EuroDual-won corridor.</span>
+      <span class="desc">2,100 km — EuroDual wins.</span>
     </a>
     <a class="card" href="data/corridor_map.png">
       <span class="icon">🖼️</span>
@@ -199,8 +212,7 @@
   </div>
 
   <footer>
-    European Loc Pool locomotive-competitiveness model — internal diligence working views, not for
-    external distribution. Generated 2026-09-08.
+    Locomotive route-cost model — working views. Generated 2026-09-08.
   </footer>
 </div>
 </body>
