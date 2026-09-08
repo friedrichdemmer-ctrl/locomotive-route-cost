@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OD-Pair Route Comparison</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  html, body { margin: 0; height: 100%; font-family: -apple-system, "Segoe UI", sans-serif; }
+  #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+  #controls {
+    position: fixed; top: 16px; right: 16px; z-index: 1000; background: white;
+    padding: 12px 16px; border: 1px solid #999; border-radius: 6px; font-size: 13px;
+    width: 420px; max-height: 88vh; overflow-y: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  }
+  #controls select { width: 100%; margin-top: 4px; padding: 4px; font-size: 13px; }
+  .row { display: flex; gap: 8px; }
+  .row > div { flex: 1; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { padding: 2px 4px; }
+  #loading { color: #777; font-style: italic; padding: 8px 0; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="controls">
+  <div class="row">
+    <div><b>Origin country</b><select id="origin-select"></select></div>
+    <div><b>Destination country</b><select id="dest-select"></select></div>
+  </div>
+  <div id="hub-row" style="margin-top: 8px; display: none;">
+    <b>Hub pair</b><select id="hub-select"></select>
+  </div>
+  <div id="route-detail" style="margin-top: 10px;"></div>
+</div>
+<script>
+const LOCOMOTIVES = ["EURO9000", "Vectron", "Vectron Dual Mode", "EuroDual"];
+const ROUTE_COLOR = "#2166ac";
+
+const map = L.map("map").setView([50, 10], 4);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "&copy; OpenStreetMap contributors", maxZoom: 12,
+}).addTo(map);
+
+let INDEX = null;
+let currentLine = null;
+const routeCache = {};
+
+function fmtEur(x) { return x === null ? "n/a" : "EUR " + Math.round(x).toLocaleString(); }
+
+function originsSorted() {
+  const s = new Set();
+  for (const k in INDEX) s.add(INDEX[k].origin);
+  return Array.from(s).sort();
+}
+function destinationsFor(origin) {
+  const s = new Set();
+  for (const k in INDEX) if (INDEX[k].origin === origin) s.add(INDEX[k].destination);
+  return Array.from(s).sort();
+}
+function pairFor(origin, dest) {
+  for (const k in INDEX) if (INDEX[k].origin === origin && INDEX[k].destination === dest) return INDEX[k];
+  return null;
+}
+function populateSelect(sel, options, labelFn) {
+  sel.innerHTML = "";
+  options.forEach((o, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = labelFn ? labelFn(o) : o;
+    sel.appendChild(opt);
+  });
+}
+
+function segCharMark(ch) {
+  if (ch === "R") return '<span style="color:#a05a00;font-weight:bold;" title="Diesel relay">R</span>';
+  if (ch === "H") return '<span style="color:#b8860b;font-weight:bold;" title="Helper attached">H</span>';
+  if (ch === ".") return '<span style="color:#2a8f4e;" title="OK, no assistance">&#10003;</span>';
+  return "&mdash;";
+}
+
+function renderDetail(route) {
+  const segRows = route.segments.map((seg, i) => {
+    const cells = LOCOMOTIVES.map(loco => {
+      const lr = route.locomotives[loco];
+      const ch = lr.seg_states[i];
+      return `<td style="text-align:center;">${segCharMark(ch)}</td>`;
+    }).join("");
+    return `<tr><td>${seg.op_start_name} &rarr; ${seg.op_end_name}</td>` +
+      `<td style="text-align:right;">${seg.distance_km.toFixed(1)}</td>` +
+      `<td style="text-align:right;">${seg.gradient_pct.toFixed(1)}</td>` +
+      `<td style="text-align:center;">${seg.electrified ? "&#9889;" : ""}</td>` +
+      `<td>${seg.country || ""}</td>${cells}</tr>`;
+  }).join("");
+
+  const summaryCells = LOCOMOTIVES.map(loco => {
+    const lr = route.locomotives[loco];
+    const status = lr.feasible
+      ? fmtEur(lr.total_cost_eur) + (lr.journey_time_h ? " / " + lr.journey_time_h.toFixed(1) + "h" : "")
+      : "infeasible (" + (lr.failure_reason || "unknown") + ")";
+    const extras = [];
+    if (lr.helper_attach_events) extras.push(lr.helper_attach_events + "x helper, " + lr.helper_distance_km.toFixed(0) + "km");
+    if (lr.relay_attach_events) extras.push(lr.relay_attach_events + "x relay, " + lr.relay_distance_km.toFixed(0) + "km");
+    return `<td><b>${loco}</b><br>${status}` +
+      (extras.length ? `<br><span style="font-size:10px;color:#777;">${extras.join("; ")}</span>` : "") + "</td>";
+  }).join("");
+
+  document.getElementById("route-detail").innerHTML =
+    `<div style="margin-top:4px;"><b>${route.op_start_name}</b> &rarr; <b>${route.op_end_name}</b><br>` +
+    `${route.distance_km} km, ${route.n_hops} hops</div>` +
+    `<table style="margin-top:8px;font-size:12px;"><tr>${summaryCells}</tr></table>` +
+    `<div style="max-height:280px;overflow-y:auto;margin-top:10px;border-top:1px solid #ddd;padding-top:6px;">` +
+    `<table style="font-size:11px;"><thead><tr style="border-bottom:1px solid #ccc;position:sticky;top:0;background:white;">` +
+    `<th style="text-align:left;">Segment</th><th>km</th><th>Grade %</th><th>Elec.</th><th>Country</th>` +
+    LOCOMOTIVES.map(l => `<th>${l}</th>`).join("") + `</tr></thead><tbody>${segRows}</tbody></table></div>` +
+    `<div style="font-size:10px;color:#777;margin-top:6px;">H = helper attached &nbsp; R = diesel relay used &nbsp; ` +
+    `&#10003; = no assistance needed &nbsp; &mdash; = infeasible for that locomotive here. Generic 1,600t freight train.</div>`;
+}
+
+async function selectHubRoute(pair, hubIndex) {
+  const hrMeta = pair.hub_routes[hubIndex];
+  document.getElementById("route-detail").innerHTML = '<div id="loading">Loading route detail…</div>';
+  let route = routeCache[hrMeta.file];
+  if (!route) {
+    const resp = await fetch(hrMeta.file);
+    route = await resp.json();
+    routeCache[hrMeta.file] = route;
+  }
+  if (currentLine) map.removeLayer(currentLine);
+  currentLine = L.polyline(route.route_coords, { color: ROUTE_COLOR, weight: 4, opacity: 0.85 }).addTo(map);
+  map.fitBounds(currentLine.getBounds(), { padding: [40, 40], maxZoom: 10 });
+  renderDetail(route);
+}
+
+function onOriginDestChange() {
+  const origin = originSel.options[originSel.selectedIndex].textContent;
+  const dest = destSel.options[destSel.selectedIndex].textContent;
+  const pair = pairFor(origin, dest);
+  if (!pair) return;
+  const hubRow = document.getElementById("hub-row");
+  const hubSel = document.getElementById("hub-select");
+  if (pair.hub_routes.length > 1) {
+    hubRow.style.display = "block";
+    populateSelect(hubSel, pair.hub_routes, hr =>
+      `${hr.op_start_name} → ${hr.op_end_name} (weight ${hr.weight.toFixed(2)}${hr.winner ? ", " + hr.winner + " wins" : ""})`
+    );
+    hubSel.onchange = () => selectHubRoute(pair, parseInt(hubSel.value, 10));
+  } else {
+    hubRow.style.display = "none";
+  }
+  selectHubRoute(pair, 0);
+}
+function onOriginChange() {
+  const origin = originSel.options[originSel.selectedIndex].textContent;
+  populateSelect(destSel, destinationsFor(origin));
+  onOriginDestChange();
+}
+
+const originSel = document.getElementById("origin-select");
+const destSel = document.getElementById("dest-select");
+
+fetch("od_pair_index.json").then(r => r.json()).then(data => {
+  INDEX = data;
+  populateSelect(originSel, originsSorted());
+  originSel.onchange = onOriginChange;
+  destSel.onchange = onOriginDestChange;
+  onOriginChange();
+});
+</script>
+</body>
+</html>
