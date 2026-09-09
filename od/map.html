@@ -46,6 +46,43 @@
     <b>Hub pair</b><select id="hub-select"></select>
   </div>
   <div id="route-detail" style="margin-top: 10px;"></div>
+
+  <div style="margin-top: 14px; border-top: 1px solid #ddd; padding-top: 8px;">
+    <button id="custom-toggle-btn" style="width:100%;padding:6px;font-size:12px;border:1px solid #999;border-radius:4px;background:#f5f5f5;cursor:pointer;text-align:left;">
+      &#9881; Test your own locomotive &#9662;
+    </button>
+    <div id="custom-form" style="display:none;margin-top:8px;font-size:12px;">
+      <div style="font-size:10px;color:#777;margin-bottom:6px;">
+        Runs the real cost/feasibility model against the currently selected route above.
+        Speed limit defaults to 100 km/h per segment and voltage-system restrictions are not
+        enforced here (that per-segment data isn't captured for these pre-resolved routes) — treat
+        results as indicative, same physics/economics engine as the rest of this site otherwise.
+      </div>
+      <label>Name<input id="cl-name" type="text" value="My Locomotive" style="width:100%;padding:3px;margin:2px 0 6px;"></label>
+      <div class="row">
+        <div><label>Mass (t)<input id="cl-mass" type="number" step="1" value="90" style="width:100%;padding:3px;"></label></div>
+        <div><label>Axles<input id="cl-axles" type="number" step="1" value="6" style="width:100%;padding:3px;"></label></div>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <div><label>Electric power (kW)<input id="cl-electric" type="number" step="100" value="6000" style="width:100%;padding:3px;"></label></div>
+        <div><label>Diesel power (kW)<input id="cl-diesel" type="number" step="100" value="0" style="width:100%;padding:3px;"></label></div>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <div><label>Max speed (km/h)<input id="cl-speed" type="number" step="10" value="140" style="width:100%;padding:3px;"></label></div>
+        <div><label>Starting TE (kN)<input id="cl-te" type="number" step="10" value="300" style="width:100%;padding:3px;"></label></div>
+      </div>
+      <label style="display:block;margin-top:6px;">Purchase price (EUR)<input id="cl-capex" type="number" step="100000" value="5000000" style="width:100%;padding:3px;margin-top:2px;"></label>
+      <div style="margin-top:6px;">
+        <b style="font-size:11px;">Voltage systems (optional — recorded but not enforced, see note above)</b><br>
+        <label style="font-size:11px;"><input type="checkbox" class="cl-voltage" value="25kV_AC_50Hz"> 25kV AC 50Hz</label>
+        <label style="font-size:11px;margin-left:8px;"><input type="checkbox" class="cl-voltage" value="15kV_AC_16.7Hz"> 15kV AC 16.7Hz</label><br>
+        <label style="font-size:11px;"><input type="checkbox" class="cl-voltage" value="3kV_DC"> 3kV DC</label>
+        <label style="font-size:11px;margin-left:8px;"><input type="checkbox" class="cl-voltage" value="1.5kV_DC"> 1.5kV DC</label>
+      </div>
+      <button id="cl-run-btn" style="width:100%;margin-top:10px;padding:6px;font-size:12px;border:1px solid #2166ac;border-radius:4px;background:#2166ac;color:white;cursor:pointer;">Run comparison</button>
+      <div id="cl-result" style="margin-top:8px;"></div>
+    </div>
+  </div>
 </div>
 <script>
 const LOCOMOTIVES = ["EURO9000", "Vectron", "Vectron Dual Mode", "EuroDual"];
@@ -58,6 +95,9 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 let INDEX = null;
 let currentLine = null;
+let currentRoute = null;
+let customResult = null;
+let customLocoName = null;
 const routeCache = {};
 
 function fmtEur(x) { return x === null ? "n/a" : "EUR " + Math.round(x).toLocaleString(); }
@@ -94,9 +134,12 @@ function segCharMark(ch) {
 }
 
 function renderDetail(route) {
+  const allNames = customResult ? LOCOMOTIVES.concat([customLocoName]) : LOCOMOTIVES;
+  const lrFor = (name) => (name === customLocoName ? customResult : route.locomotives[name]);
+
   const segRows = route.segments.map((seg, i) => {
-    const cells = LOCOMOTIVES.map(loco => {
-      const lr = route.locomotives[loco];
+    const cells = allNames.map(name => {
+      const lr = lrFor(name);
       const ch = lr.seg_states[i];
       return `<td style="text-align:center;">${segCharMark(ch)}</td>`;
     }).join("");
@@ -107,15 +150,16 @@ function renderDetail(route) {
       `<td>${seg.country || ""}</td>${cells}</tr>`;
   }).join("");
 
-  const summaryCells = LOCOMOTIVES.map(loco => {
-    const lr = route.locomotives[loco];
+  const summaryCells = allNames.map(name => {
+    const lr = lrFor(name);
     const status = lr.feasible
       ? fmtEur(lr.total_cost_eur) + (lr.journey_time_h ? " / " + lr.journey_time_h.toFixed(1) + "h" : "")
       : "infeasible (" + (lr.failure_reason || "unknown") + ")";
     const extras = [];
     if (lr.helper_attach_events) extras.push(lr.helper_attach_events + "x helper, " + lr.helper_distance_km.toFixed(0) + "km");
     if (lr.relay_attach_events) extras.push(lr.relay_attach_events + "x relay, " + lr.relay_distance_km.toFixed(0) + "km");
-    return `<td><b>${loco}</b><br>${status}` +
+    const isCustom = name === customLocoName;
+    return `<td${isCustom ? ' style="background:#eef4fb;"' : ""}><b>${name}${isCustom ? " *" : ""}</b><br>${status}` +
       (extras.length ? `<br><span style="font-size:10px;color:#777;">${extras.join("; ")}</span>` : "") + "</td>";
   }).join("");
 
@@ -124,14 +168,15 @@ function renderDetail(route) {
     `${route.distance_km} km, ${route.n_hops} hops</div>` +
     `<button id="download-xlsx-btn" style="margin-top:8px;padding:5px 10px;font-size:12px;border:1px solid #999;border-radius:4px;background:#f5f5f5;cursor:pointer;">&#128190; Download as Excel</button>` +
     `<table style="margin-top:8px;font-size:12px;"><tr>${summaryCells}</tr></table>` +
+    (customResult ? `<div style="font-size:10px;color:#2166ac;margin-top:2px;">* your custom locomotive</div>` : "") +
     `<div style="max-height:280px;overflow-y:auto;margin-top:10px;border-top:1px solid #ddd;padding-top:6px;">` +
     `<table style="font-size:11px;"><thead><tr style="border-bottom:1px solid #ccc;position:sticky;top:0;background:white;">` +
     `<th style="text-align:left;">Segment</th><th>km</th><th>Grade %</th><th>Elec.</th><th>Country</th>` +
-    LOCOMOTIVES.map(l => `<th>${l}</th>`).join("") + `</tr></thead><tbody>${segRows}</tbody></table></div>` +
+    allNames.map(l => `<th>${l}</th>`).join("") + `</tr></thead><tbody>${segRows}</tbody></table></div>` +
     `<div style="font-size:10px;color:#777;margin-top:6px;">H = helper attached &nbsp; R = diesel relay used &nbsp; ` +
     `&#10003; = no assistance needed &nbsp; &mdash; = infeasible for that locomotive here. Generic 1,600t freight train.</div>`;
 
-  document.getElementById("download-xlsx-btn").onclick = () => downloadRouteAsExcel(route);
+  document.getElementById("download-xlsx-btn").onclick = () => downloadRouteAsExcel(route, allNames, lrFor);
 }
 
 function segStateLabel(ch) {
@@ -141,7 +186,9 @@ function segStateLabel(ch) {
   return "Infeasible";
 }
 
-function downloadRouteAsExcel(route) {
+function downloadRouteAsExcel(route, names, lrFor) {
+  names = names || LOCOMOTIVES;
+  lrFor = lrFor || (name => route.locomotives[name]);
   const wb = XLSX.utils.book_new();
 
   const summaryRows = [
@@ -152,10 +199,10 @@ function downloadRouteAsExcel(route) {
     [],
     ["Locomotive", "Feasible", "Total cost (EUR)", "Journey time (h)", "Helper events", "Helper km", "Relay events", "Relay km", "Failure reason"],
   ];
-  LOCOMOTIVES.forEach(loco => {
-    const lr = route.locomotives[loco];
+  names.forEach(name => {
+    const lr = lrFor(name);
     summaryRows.push([
-      loco, lr.feasible ? "Yes" : "No",
+      name, lr.feasible ? "Yes" : "No",
       lr.feasible ? Math.round(lr.total_cost_eur) : null,
       lr.feasible ? Math.round(lr.journey_time_h * 10) / 10 : null,
       lr.helper_attach_events || 0, Math.round(lr.helper_distance_km || 0),
@@ -167,11 +214,11 @@ function downloadRouteAsExcel(route) {
   XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
 
   const segHeader = ["Segment #", "From", "To", "Distance (km)", "Gradient (%)", "Electrified", "Country"]
-    .concat(LOCOMOTIVES);
+    .concat(names);
   const segRows = route.segments.map((seg, i) => {
     const row = [i + 1, seg.op_start_name, seg.op_end_name, seg.distance_km, seg.gradient_pct,
       seg.electrified ? "Yes" : "No", seg.country || ""];
-    LOCOMOTIVES.forEach(loco => row.push(segStateLabel(route.locomotives[loco].seg_states[i])));
+    names.forEach(name => row.push(segStateLabel(lrFor(name).seg_states[i])));
     return row;
   });
   const segSheet = XLSX.utils.aoa_to_sheet([segHeader, ...segRows]);
@@ -193,8 +240,60 @@ async function selectHubRoute(pair, hubIndex) {
   if (currentLine) map.removeLayer(currentLine);
   currentLine = L.polyline(route.route_coords, { color: ROUTE_COLOR, weight: 4, opacity: 0.85 }).addTo(map);
   map.fitBounds(currentLine.getBounds(), { padding: [40, 40], maxZoom: 10 });
+  currentRoute = route;
+  customResult = null;
+  customLocoName = null;
+  document.getElementById("cl-result").innerHTML = "";
   renderDetail(route);
 }
+
+document.getElementById("custom-toggle-btn").onclick = () => {
+  const form = document.getElementById("custom-form");
+  form.style.display = form.style.display === "none" ? "block" : "none";
+};
+
+document.getElementById("cl-run-btn").onclick = async () => {
+  if (!currentRoute) return;
+  const btn = document.getElementById("cl-run-btn");
+  const resultDiv = document.getElementById("cl-result");
+  const name = document.getElementById("cl-name").value.trim() || "My Locomotive";
+  const locomotive = {
+    name,
+    mass_t: parseFloat(document.getElementById("cl-mass").value),
+    axles: parseInt(document.getElementById("cl-axles").value, 10),
+    electric_max_power_kw: parseFloat(document.getElementById("cl-electric").value) || 0,
+    diesel_max_power_kw: parseFloat(document.getElementById("cl-diesel").value) || 0,
+    max_speed_kmh: parseFloat(document.getElementById("cl-speed").value),
+    max_starting_te_kn: parseFloat(document.getElementById("cl-te").value),
+    capex_eur: parseFloat(document.getElementById("cl-capex").value),
+    voltage_systems: Array.from(document.querySelectorAll(".cl-voltage:checked")).map(el => el.value),
+  };
+
+  btn.disabled = true;
+  btn.textContent = "Running…";
+  resultDiv.innerHTML = "";
+  try {
+    const resp = await fetch("/api/compare", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ segments: currentRoute.segments, locomotive }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      resultDiv.innerHTML = `<div style="color:#b00;font-size:11px;">Error: ${data.error || "unknown error"}</div>`;
+      return;
+    }
+    customResult = data;
+    customLocoName = name;
+    renderDetail(currentRoute);
+    resultDiv.innerHTML = `<div style="color:#2a8f4e;font-size:11px;">Added "${name}" to the comparison table above.</div>`;
+  } catch (e) {
+    resultDiv.innerHTML = `<div style="color:#b00;font-size:11px;">Request failed: ${e}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Run comparison";
+  }
+};
 
 function onOriginDestChange() {
   const origin = originSel.options[originSel.selectedIndex].textContent;

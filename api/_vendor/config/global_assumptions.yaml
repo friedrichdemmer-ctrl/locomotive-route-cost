@@ -1,0 +1,271 @@
+# Global physics and economics assumptions.
+# Direct restatement of the V0.2 Excel "Assumptions" sheet plus a small number of new V0.3 controls
+# (adhesion coefficient, commercial-speed threshold). Every parameter carries a status per
+# CLAUDE.md section 25.
+
+gravity_mps2:
+  value: 9.81
+  unit: m/s^2
+  status: VERIFIED
+  notes: Static physical constant, inherited from V0.2.
+
+legacy_rolling_resistance_n_per_t:
+  value: 20
+  unit: N/tonne
+  status: ANALYST_ASSUMPTION
+  notes: >
+    V0.2 constant rolling resistance. Retained only for the "v02_legacy" resistance model used in
+    regression tests. Superseded by davis coefficients for the V0.3 default model.
+
+traction_efficiency:
+  value: 0.9
+  unit: fraction
+  status: ANALYST_ASSUMPTION
+  notes: Energy conversion efficiency, inherited from V0.2.
+
+electricity_price_eur_per_kwh:
+  value: 0.16
+  unit: EUR/kWh
+  status: ANALYST_ASSUMPTION
+  notes: >
+    Updated 2026-09-07 (superseded 0.15 V0.2 placeholder). Now serves as the FALLBACK price for any
+    segment without a country-specific figure in electricity_price_by_country_eur_per_kwh below --
+    a segment with no known country (a manual cross-border bridge, a synthetic/test route) or a real
+    country not yet in that table (currently Bulgaria/Portugal, both real gaps in the network, not an
+    oversight -- see that field's own notes). Value is the "European modelling average" the
+    user-supplied 2026 traction-electricity assumptions document itself recommends as the Europe-wide
+    default ("CER reports railways paying >EUR140/MWh for traction electricity on average across 24
+    European countries; I would use ~EUR160/MWh once network/distribution effects are incorporated"),
+    explicitly endorsed by the user for this exact fallback role.
+
+electricity_price_by_country_eur_per_kwh:
+  value:
+    # 2026-09-07: user-supplied 2026 traction-electricity assumptions (Brief/ChatGPT - ELP.pdf),
+    # "all-in modelling cost per kWh consumed by the locomotive" (energy procurement + traction-grid
+    # usage + public-grid charges + losses/balancing), NOT a household/industrial tariff. Confidence
+    # tier per the source document's own wording kept alongside each figure below, not flattened --
+    # some are named-regulator/operator sourced (Bundesnetzagentur, SNCF Reseau, OBB-Infrastruktur,
+    # SBB, Infrabel), others are the document's own "modelling estimate" with no cited source.
+    DEU: 0.21  # High -- Bundesnetzagentur: total 2024 traction-current charge 20.65 ct/kWh
+    FRA: 0.11  # High/Med -- SNCF Reseau published traction-current supply EUR0.10149/kWh, rounded up
+    ITA: 0.17  # Medium -- RFI buys traction electricity on the wholesale market (5.9 TWh in 2024)
+    ESP: 0.15  # Medium -- document's own "modelling estimate", no cited source
+    AUT: 0.15  # Medium/High -- OBB-Infrastruktur 2026 traction-network charge EUR52.40/43.67 per MWh peak/off-peak, supply added separately
+    CHE: 0.20  # Medium -- SBB published electricity component CHF187/MWh, converted/rounded
+    NLD: 0.18  # Medium -- document's own "modelling estimate" (supply + traction-network costs)
+    BEL: 0.18  # Medium -- Infrabel passes through energy/balancing/public-network/distribution costs
+    POL: 0.29  # High/Med -- 2026 traction electricity PLN 1,244.61/MWh (Polish regional rail contract)
+    CZE: 0.11  # High/Med -- 2025 traction-power procurement CZK 2,431/MWh; independent 2025 rail model uses EUR111.5/MWh
+    SVK: 0.15  # Medium/Low -- document's own "modelling estimate", no cited source
+    HUN: 0.16  # Medium/Low -- document's own "modelling estimate", no cited source
+    SVN: 0.15  # Medium/Low -- document's own "modelling estimate", no cited source
+    ROU: 0.15  # Medium/Low -- document's own "modelling estimate", no cited source
+    DNK: 0.16  # Medium/Low -- document's own "modelling estimate", no cited source
+    SWE: 0.12  # Medium -- relatively low Nordic electricity-cost environment
+    NOR: 0.10  # Medium -- relatively low Nordic electricity-cost environment
+    # BGR and PRT are real gaps in the source document (not covered at all) -- both are in this
+    # project's network (data/processed/rinf_graph_{bgr,prt}.parquet). Per explicit user instruction
+    # ("use the European override for Bulgaria and Portugal electricity costs"), these fall back to
+    # electricity_price_eur_per_kwh (0.16) instead of a fabricated country-specific figure -- omitted
+    # from this dict deliberately, not by oversight, so resolve_electricity_price_eur_per_kwh's
+    # existing fallback path handles them the same way it handles any other unlisted country.
+  unit: EUR/kWh by ISO alpha-3 country code
+  status: ANALYST_ASSUMPTION
+  notes: >
+    Added 2026-09-07 for country-specific traction electricity pricing (routing.py threads RINF's own
+    per-section country code onto each Segment; economics.resolve_electricity_price_eur_per_kwh looks
+    it up here, falling back to electricity_price_eur_per_kwh above when a country is missing or
+    unknown). Deliberately electricity-only -- diesel stays one flat network-wide price, see
+    diesel_price_eur_per_kwh's notes for why (electricity is physically tied to point of consumption;
+    diesel is portable and an operator fuels wherever it's cheapest, per direct user instruction).
+
+diesel_price_eur_per_kwh:
+  value: 0.33
+  unit: EUR/kWh
+  status: ANALYST_ASSUMPTION
+  notes: >
+    Updated 2026-09-07 (superseded 0.3 V0.2 placeholder). Deliberately kept as ONE flat network-wide
+    figure, not per-country like electricity above -- per direct user instruction/reasoning: diesel is
+    a portable, storable commodity (a real locomotive operator fuels at the cheapest available point
+    and carries it across borders -- the same "fuel tourism" dynamic well documented in road freight),
+    unlike grid electricity, which is physically tied to wherever the pantograph draws it. Per-segment
+    diesel attribution would therefore misrepresent real operator behaviour, not refine it.
+
+    Derivation chain (all inputs user-supplied or user-confirmed this session, kept explicit rather
+    than presenting 0.33 as if it were itself a directly-quoted price):
+    - EUR1.15/L: "smart fueling" basis -- the cheapest bulk/commercial diesel price actually sourced
+      for a country in this project's network (Poland and Romania, tied lowest, both real corridors
+      here -- e.g. the Sofia-Fetesti route), from the user-supplied 2026 diesel assumptions document
+      (Brief/ChatGPT - ELP- Diesel.pdf), which itself recommends avoiding retail pump prices for a
+      locomotive TCO model in favour of pre-tax bulk/commercial rail-procurement pricing.
+    - 9.96 kWh/L: diesel's lower heating value (~35.86 MJ/L / 3.6), a physical constant, not sourced
+      to this project specifically.
+    - 0.35: assumed diesel-electric locomotive overall (engine -> generator -> inverter -> traction
+      motor) efficiency, user-confirmed 2026-09-07 -- within the commonly-cited 30-37% range for
+      modern diesel-electric locomotives, not independently sourced to EURO9000/EuroDual/Vectron Dual
+      Mode specifically. This is separate from traction_efficiency (0.9 above), which governs only
+      the ELECTRIC traction chain.
+    - EUR1.15/L / (9.96 kWh/L x 0.35) = EUR1.15 / 3.486 kWh/L ~= EUR0.33/kWh.
+
+diesel_relay_eur_per_km:
+  value: 8.575
+  unit: EUR/km
+  status: ANALYST_ASSUMPTION
+  notes: >
+    Added 2026-09-08 (Option A, "diesel-relay" mechanism -- CLAUDE.md discipline: a pure-electric
+    locomotive on a segment with no usable power gets a flat relay cost instead of being marked
+    infeasible outright, since in reality a diesel locomotive would haul the train through the gap).
+    All-in flat rate covering the relay unit's own lease+maintenance+energy for the distance it
+    actually hauls -- explicitly NOT driver time, which flows through the normal journey-time x
+    driver_eur_per_h calculation instead (one crew assumed for the whole journey, a documented
+    simplification, not a second driver invented here).
+
+    No public commercial rate exists for this vehicle class (confirmed via real search effort:
+    Class 66, Vossloh Euro4000/Euro3000 lease rates, and general locomotive-leasing market reports
+    all confirm lease terms are negotiated privately, not published). User-confirmed 2026-09-08:
+    use the one real, sourced figure found, clearly caveated as a likely UNDERSTATEMENT --
+    it is for the wrong vehicle class:
+    - EUR2.9m: net capex proxy, derived from a genuine 2024/2025 procurement record -- CZ Loko won a
+      tender to supply 18 SHUNTING diesel locomotives to PKP Intercity for EUR64.2m including VAT
+      (EUR64.2m / 18 = EUR3.567m/unit, / 1.23 to strip Poland's 23% VAT = ~EUR2.9m net). A shunting
+      locomotive is built for yard/trip work, not mainline-speed hauling of a 1,600t freight train
+      over tens of km -- likely understates a genuine gap-filler unit's real cost.
+    - Fixed (lease+maintenance): EUR2.9m x 12.5%/year (same formula as every other locomotive in this
+      project, see config/locomotives/*.yaml) / 100,000 km/year (annual_km_per_locomotive) =
+      EUR3.625/km.
+    - Energy: no real consumption figure exists for this vehicle either -- reuses the "medium"
+      15 kWh/km figure from Brief/ELP_route_cost_simulation_inputs.numbers (the same uniform-
+      across-locomotives benchmark flagged elsewhere this session as unsuitable for the PHYSICS-based
+      main fleet, but appropriate here since this vehicle is never run through the physics engine at
+      all) x diesel_price_eur_per_kwh (EUR0.33/kWh, above) = EUR4.95/km.
+    - Total: EUR3.625 + EUR4.95 = EUR8.575/km.
+
+diesel_relay_attach_detach_cost_eur:
+  value: 150.0
+  unit: EUR/event
+  status: ANALYST_ASSUMPTION
+  notes: >
+    Added 2026-09-08, same mechanism as diesel_relay_eur_per_km above. Proxy of HelperPolicy's own
+    existing attach_detach_cost_eur default (operating_concepts.py) -- itself not independently
+    sourced -- reused here as a separate parameter (not by instantiating a HelperPolicy) since a
+    traction change is a conceptually distinct event from a same-type helper attaching.
+
+diesel_relay_attach_detach_time_h:
+  value: 0.25
+  unit: hours/event
+  status: ANALYST_ASSUMPTION
+  notes: >
+    Added 2026-09-08, same mechanism and same proxy-of-HelperPolicy's-own-default rationale as
+    diesel_relay_attach_detach_cost_eur above.
+
+min_driving_resistance_n:
+  value: 1000
+  unit: N
+  status: MODEL_CONTROL
+  notes: >
+    Numerical floor on near-zero/negative (downhill) resistance used only by the steady-state speed
+    solver, inherited unchanged from V0.2. Known simplification: this floors the theoretical
+    downhill speed rather than modelling coasting/regenerative/mechanical braking. Scheduled for
+    replacement in V0.4 per CLAUDE.md section 15.
+
+default_adhesion_coefficient:
+  value: 0.35
+  unit: fraction
+  status: CALIBRATED
+  notes: >
+    Revised 2026-08-21 during Brenner corridor validation (data/validation/brenner_corridor.md).
+    Previously 0.33 (generic literature "permissible design" figure, ANALYST_ASSUMPTION), which
+    contradicted a real observed result: Rail Traction Company/European Loc Pool successfully hauled
+    a 1,500 t train with a single EURO9000 on the Verona-Brenner route (2.25% ruling grade, no 3kV
+    boost mode used). At mu=0.33 the model predicts that run as infeasible (adhesion-limited); the
+    exact breakeven is mu=0.3313. 0.35 is the smallest round value clearing that breakeven with a
+    safety margin, while staying at or below the "up to 0.35 clean dry rail" ceiling generally cited
+    in railway engineering literature — deliberately NOT raised to the ~0.36-0.43 range that each
+    locomotive's own nameplate starting TE divided by its mass would imply (see
+    docs/assumptions_register.md), since that figure is circular (derived from the same manufacturer
+    marketing figures this coefficient is meant to independently check) and is not itself
+    corroborated by an observed result. This is calibrated against exactly ONE real (locomotive,
+    train weight, corridor) triple — treat as provisional, not as a validated locomotive-specific
+    adhesion coefficient, and revisit as more real corridor evidence or genuine OEM adhesion data
+    becomes available. Still a single shared value across all locomotives; must be overridable per
+    scenario per CLAUDE.md section 14.
+
+default_min_commercial_speed_kmh:
+  value: 30
+  unit: km/h
+  status: ANALYST_ASSUMPTION
+  notes: >
+    Default minimum sustained speed below which a technically feasible result is reported as
+    FEASIBLE_BUT_TOO_SLOW rather than FEASIBLE, per CLAUDE.md section 18. Placeholder threshold —
+    replace with a route/traffic-appropriate value once path-occupation and timetable evidence is
+    available.
+
+service_braking_rate_mps2:
+  value: 0.5
+  unit: m/s^2
+  status: ANALYST_ASSUMPTION
+  notes: >
+    V0.4 (CLAUDE.md section 15). Typical published freight service-braking deceleration order of
+    magnitude is roughly 0.4-0.7 m/s^2 depending on train length/braking system; 0.5 is a generic
+    mid-range value, not sourced to any specific EURO9000/Vectron/TRAXX braking-system specification.
+    Governs the braking-distance lookahead (dynamics.compute_braking_profile) that prevents speed
+    changing instantaneously at a lower speed limit.
+
+rotating_mass_factor:
+  value: 1.08
+  unit: fraction (multiplier on static mass)
+  status: ANALYST_ASSUMPTION
+  notes: >
+    V0.4. Accounts for the rotational inertia of wheels, axles and traction motors, which resist
+    acceleration in addition to the vehicle's static (translational) mass. A generic order-of-
+    magnitude value for rail vehicles (typical published range is roughly 1.05-1.10); not fitted or
+    sourced per locomotive/train.
+
+regen_efficiency:
+  value: 0.9
+  unit: fraction
+  status: ANALYST_ASSUMPTION
+  notes: >
+    V0.4. Conversion efficiency applied to regenerative braking energy actually recovered
+    (dynamics.simulate_step). Set equal to traction_efficiency as a simplifying assumption (round-trip
+    efficiency is not modelled separately); not sourced. Regenerative braking is only modelled on
+    electrified segments — non-electrified (diesel) braking is treated as fully mechanical, no
+    recovery.
+
+driver_eur_per_h:
+  value: 50
+  unit: EUR/hour
+  status: ANALYST_ASSUMPTION
+  notes: >
+    V0.6 (CLAUDE.md section 19, personnel cost group). All-in driver cost (wages, social charges,
+    overhead) per hour of journey time. A generic round-number placeholder for a European freight
+    locomotive driver — no national/operator collective-bargaining or payroll source has been
+    consulted. Applied once per journey normally; a helper/banking movement adds a second driver for
+    the duration the helper is attached (operating_concepts.HelperPolicy).
+
+annual_km_per_locomotive:
+  value: 150000
+  unit: km/year
+  status: ANALYST_ASSUMPTION
+  notes: >
+    REVISED 2026-09-08, explicit user instruction ("the assumption of 100,000km p.a. needs to be
+    changed to 150000km") -- was 100,000 km/year (kept below as documented history, not deleted).
+    This changes every locomotive's own maintenance_eur_per_km (each computed as
+    capex_eur * 0.125/year / annual_km_per_locomotive -- see config/locomotives/*.yaml, "12.5%-of-capex"
+    sources entries) proportionally DOWN by a factor of 100,000/150,000 = 2/3, since the same annual
+    fixed cost is now spread over more km. This is a genuine headline-affecting change (lowers every
+    locomotive's per-km ownership cost uniformly) -- flagged, not silently absorbed; every downstream
+    output computed under the old 100,000 km/year figure (the 254-country-pair headline, the weight
+    sweep, the 6-corridor cumulative-cost-curve workbook and map) is now stale and needs re-running
+    under the new figure before being treated as current.
+
+    Original 2026-08-26 note, preserved: Added for the locomotive-equivalent demand translation
+    (CLAUDE.md section 2's "Economically advantaged" tier names "locomotive diagrams and units" as
+    its preferred weighting; section 54's success definition names "locomotive-equivalent demand"
+    explicitly). Not a new number at the time: it was the SAME annual-utilisation assumption already
+    used, identically, to derive every locomotive's maintenance_eur_per_km from
+    Brief/Locomotive_Base_Case_Comparison.xlsx (see config/locomotives/*.yaml sources blocks and
+    docs/assumptions_register.md) -- exposed as its own parameter so
+    scripts/estimate_locomotive_demand.py can reuse it directly rather than re-deriving it from a
+    cost figure. Same caveat as everywhere else this number is used: the source workbook gives no
+    independent annual-operating-hours figure, only this annual-km one.

@@ -1,0 +1,30 @@
+# Generic freight train archetype, trailing mass matched to the V0.2 Excel scenario set (1,600 t)
+# so the "v02_legacy" resistance model reproduces the audited baseline exactly.
+name: generic_freight_1600t
+status: ANALYST_ASSUMPTION
+trailing_mass_t: 1600
+train_length_m: null
+wagon_count: null
+wagon_mass_t: null
+payload_t: null
+max_permitted_speed_kmh: null   # no train-specific cap in V0.2; route speed limit and locomotive max speed govern
+
+davis_resistance:
+  status: ANALYST_ASSUMPTION
+  notes: >
+    A term inherited from the V0.2 constant rolling resistance (20 N/t) for continuity. B and C
+    terms are illustrative placeholders representative of the order of magnitude of mechanical and
+    aerodynamic drag for a loaded mixed-freight consist. NOT fitted or sourced to any specific
+    EURO9000/Vectron/TRAXX-hauled train. Replace before any conclusion depends on the speed-
+    dependent terms.
+  a_n_per_t: 20.0          # N per tonne, constant term
+  b_n_per_t_per_kmh: 0.10  # N per tonne per km/h, mechanical/bearing term
+  c_n_per_t_per_kmh2: 0.003  # N per tonne per (km/h)^2, aerodynamic term
+
+sources:
+  - parameter: trailing_mass_t
+    source: V0.2 Excel Scenarios sheet
+    status: CALIBRATED
+  - parameter: davis_resistance
+    source: illustrative, not fitted — see notes above
+    status: PLACEHOLDER
