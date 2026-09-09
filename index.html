@@ -19,7 +19,7 @@
     background: var(--bg);
     color: var(--ink);
     font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-    padding: 32px 40px 60px;
+    padding: 72px 40px 60px;
   }
   .wrap { max-width: 1100px; margin: 0 auto; }
   h1 {
@@ -75,22 +75,19 @@
 </style>
 </head>
 <body>
+<div id="site-nav" style="position:fixed;top:0;left:0;right:0;height:40px;z-index:5000;background:#1c2321;color:#fff;display:flex;align-items:center;gap:18px;padding:0 16px;font-family:-apple-system,'Segoe UI',sans-serif;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,0.25);overflow-x:auto;white-space:nowrap;">
+  <a href="/" style="color:#fff;font-weight:700;text-decoration:none;">Locomotive Route Cost</a>
+  <a href="/maps/network_advantage_map.html" style="color:#e6e2d8;text-decoration:none;">Network Winner Map</a>
+  <a href="/maps/gradient_threshold_map.html" style="color:#e6e2d8;text-decoration:none;">Gradient (traffic-weighted)</a>
+  <a href="/maps/ruling_gradient_map.html" style="color:#e6e2d8;text-decoration:none;">Gradient (whole network)</a>
+  <a href="/od/map.html" style="color:#e6e2d8;text-decoration:none;">OD-Pair Comparison</a>
+</div>
 <div class="wrap">
   <h1>Locomotive Route Cost</h1>
   <p class="subtitle">
     Which locomotive is cheapest, and which can even make the trip, on real European freight
-    routes — network-wide win-share, a route picker covering every country pair, and a close-up
-    cost breakdown for six major corridors.
+    routes.
   </p>
-
-  <h2>Headline</h2>
-  <div class="grid">
-    <a class="card" href="data/winshare_headline_summary.docx">
-      <span class="icon">📊</span>
-      <span class="title">Win-Share Headline</span>
-      <span class="desc">Vectron 40.0% · Vectron Dual Mode 34.9% · EuroDual 21.1% · EURO9000 4.1% — across 254 country pairs / 934 real hub-routes.</span>
-    </a>
-  </div>
 
   <h2>Network-wide views</h2>
   <div class="grid">
@@ -116,66 +113,8 @@
     </a>
   </div>
 
-  <h2>6-corridor cumulative-cost analysis</h2>
-  <div class="grid">
-    <a class="card" href="maps/PL_to_IT.html">
-      <span class="icon">🚂</span>
-      <span class="title">Warszawa → Bologna</span>
-      <span class="desc">1,578 km — EuroDual wins.</span>
-    </a>
-    <a class="card" href="maps/DE_to_RO.html">
-      <span class="icon">🚂</span>
-      <span class="title">Maschen → Constanța</span>
-      <span class="desc">2,146 km — Vectron wins.</span>
-    </a>
-    <a class="card" href="maps/DE_to_SI.html">
-      <span class="icon">🚂</span>
-      <span class="title">Maschen → Postojna</span>
-      <span class="desc">1,519 km — Vectron Dual Mode wins.</span>
-    </a>
-    <a class="card" href="maps/DE_to_ES.html">
-      <span class="icon">🚂</span>
-      <span class="title">Maschen → Barcelona</span>
-      <span class="desc">3,612 km — EuroDual wins.</span>
-    </a>
-    <a class="card" href="maps/FR_to_ES.html">
-      <span class="icon">🚂</span>
-      <span class="title">Moselle → Barcelona</span>
-      <span class="desc">1,748 km — EuroDual wins.</span>
-    </a>
-    <a class="card" href="maps/RO_to_IT.html">
-      <span class="icon">🚂</span>
-      <span class="title">Constanța → Bologna</span>
-      <span class="desc">2,100 km — EuroDual wins.</span>
-    </a>
-    <a class="card" href="data/corridor_map.png">
-      <span class="icon">🖼️</span>
-      <span class="title">All 6 Corridors — Overview Image</span>
-      <span class="desc">Static map, all 6 routes together with real chokepoints marked.</span>
-    </a>
-  </div>
-
-  <h2>Data downloads</h2>
-  <div class="grid">
-    <a class="card" href="data/cumulative_cost_curves.xlsx">
-      <span class="icon">📊</span>
-      <span class="title">Cumulative Cost Workbook</span>
-      <span class="desc">Per-segment cost curves and failure reasons for all 6 corridors × 4 locomotives.</span>
-    </a>
-    <a class="card" href="data/european_rail_network_gradient_thresholds.xlsx">
-      <span class="icon">📊</span>
-      <span class="title">Network Gradient Table</span>
-      <span class="desc">0.5% increments, whole-network length share.</span>
-    </a>
-    <a class="card" href="data/gradient_map_1.6pct.png">
-      <span class="icon">🖼️</span>
-      <span class="title">1.6% Gradient Map</span>
-      <span class="desc">Whole network at the Vectron-helper threshold.</span>
-    </a>
-  </div>
-
   <footer>
-    Locomotive route-cost model — working views. Generated 2026-09-08.
+    Locomotive route-cost model — working views.
   </footer>
 </div>
 </body>

@@ -50,11 +50,23 @@
             </script>
 
         
+<style>
+  .leaflet-top { top: 40px !important; }
+  body { padding-top: 0 !important; }
+</style>
 </head>
 <body>
+<div id="site-nav" style="position:fixed;top:0;left:0;right:0;height:40px;z-index:5000;background:#1c2321;color:#fff;display:flex;align-items:center;gap:18px;padding:0 16px;font-family:-apple-system,'Segoe UI',sans-serif;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,0.25);overflow-x:auto;white-space:nowrap;">
+  <a href="/" style="color:#fff;font-weight:700;text-decoration:none;">Locomotive Route Cost</a>
+  <a href="/maps/network_advantage_map.html" style="color:#e6e2d8;text-decoration:none;">Network Winner Map</a>
+  <a href="/maps/gradient_threshold_map.html" style="color:#e6e2d8;text-decoration:none;">Gradient (traffic-weighted)</a>
+  <a href="/maps/ruling_gradient_map.html" style="color:#e6e2d8;text-decoration:none;">Gradient (whole network)</a>
+  <a href="/od/map.html" style="color:#e6e2d8;text-decoration:none;">OD-Pair Comparison</a>
+</div>
+
     
     
-    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: white;
+    <div style="position: fixed; top: 56px; right: 20px; z-index: 1000; background: white;
                 padding: 10px 14px; border: 1px solid #999; border-radius: 4px; font-size: 13px;
                 max-width: 300px;">
       <b>Highlight track steeper than</b><br>

@@ -6,11 +6,12 @@
 <title>OD-Pair Route Comparison</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   html, body { margin: 0; height: 100%; font-family: -apple-system, "Segoe UI", sans-serif; }
   #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
   #controls {
-    position: fixed; top: 16px; right: 16px; z-index: 1000; background: white;
+    position: fixed; top: 56px; right: 16px; z-index: 1000; background: white;
     padding: 12px 16px; border: 1px solid #999; border-radius: 6px; font-size: 13px;
     width: 420px; max-height: 88vh; overflow-y: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.12);
   }
@@ -21,8 +22,20 @@
   th, td { padding: 2px 4px; }
   #loading { color: #777; font-style: italic; padding: 8px 0; }
 </style>
+<style>
+  .leaflet-top { top: 40px !important; }
+  body { padding-top: 0 !important; }
+</style>
 </head>
 <body>
+<div id="site-nav" style="position:fixed;top:0;left:0;right:0;height:40px;z-index:5000;background:#1c2321;color:#fff;display:flex;align-items:center;gap:18px;padding:0 16px;font-family:-apple-system,'Segoe UI',sans-serif;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,0.25);overflow-x:auto;white-space:nowrap;">
+  <a href="/" style="color:#fff;font-weight:700;text-decoration:none;">Locomotive Route Cost</a>
+  <a href="/maps/network_advantage_map.html" style="color:#e6e2d8;text-decoration:none;">Network Winner Map</a>
+  <a href="/maps/gradient_threshold_map.html" style="color:#e6e2d8;text-decoration:none;">Gradient (traffic-weighted)</a>
+  <a href="/maps/ruling_gradient_map.html" style="color:#e6e2d8;text-decoration:none;">Gradient (whole network)</a>
+  <a href="/od/map.html" style="color:#e6e2d8;text-decoration:none;">OD-Pair Comparison</a>
+</div>
+
 <div id="map"></div>
 <div id="controls">
   <div class="row">
@@ -109,6 +122,7 @@ function renderDetail(route) {
   document.getElementById("route-detail").innerHTML =
     `<div style="margin-top:4px;"><b>${route.op_start_name}</b> &rarr; <b>${route.op_end_name}</b><br>` +
     `${route.distance_km} km, ${route.n_hops} hops</div>` +
+    `<button id="download-xlsx-btn" style="margin-top:8px;padding:5px 10px;font-size:12px;border:1px solid #999;border-radius:4px;background:#f5f5f5;cursor:pointer;">&#128190; Download as Excel</button>` +
     `<table style="margin-top:8px;font-size:12px;"><tr>${summaryCells}</tr></table>` +
     `<div style="max-height:280px;overflow-y:auto;margin-top:10px;border-top:1px solid #ddd;padding-top:6px;">` +
     `<table style="font-size:11px;"><thead><tr style="border-bottom:1px solid #ccc;position:sticky;top:0;background:white;">` +
@@ -116,6 +130,55 @@ function renderDetail(route) {
     LOCOMOTIVES.map(l => `<th>${l}</th>`).join("") + `</tr></thead><tbody>${segRows}</tbody></table></div>` +
     `<div style="font-size:10px;color:#777;margin-top:6px;">H = helper attached &nbsp; R = diesel relay used &nbsp; ` +
     `&#10003; = no assistance needed &nbsp; &mdash; = infeasible for that locomotive here. Generic 1,600t freight train.</div>`;
+
+  document.getElementById("download-xlsx-btn").onclick = () => downloadRouteAsExcel(route);
+}
+
+function segStateLabel(ch) {
+  if (ch === "R") return "Relay";
+  if (ch === "H") return "Helper";
+  if (ch === ".") return "OK";
+  return "Infeasible";
+}
+
+function downloadRouteAsExcel(route) {
+  const wb = XLSX.utils.book_new();
+
+  const summaryRows = [
+    ["Route", `${route.op_start_name} -> ${route.op_end_name}`],
+    ["Distance (km)", route.distance_km],
+    ["Hops", route.n_hops],
+    ["Train", "Generic 1,600t freight train"],
+    [],
+    ["Locomotive", "Feasible", "Total cost (EUR)", "Journey time (h)", "Helper events", "Helper km", "Relay events", "Relay km", "Failure reason"],
+  ];
+  LOCOMOTIVES.forEach(loco => {
+    const lr = route.locomotives[loco];
+    summaryRows.push([
+      loco, lr.feasible ? "Yes" : "No",
+      lr.feasible ? Math.round(lr.total_cost_eur) : null,
+      lr.feasible ? Math.round(lr.journey_time_h * 10) / 10 : null,
+      lr.helper_attach_events || 0, Math.round(lr.helper_distance_km || 0),
+      lr.relay_attach_events || 0, Math.round(lr.relay_distance_km || 0),
+      lr.feasible ? "" : (lr.failure_reason || "unknown"),
+    ]);
+  });
+  const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+  XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
+
+  const segHeader = ["Segment #", "From", "To", "Distance (km)", "Gradient (%)", "Electrified", "Country"]
+    .concat(LOCOMOTIVES);
+  const segRows = route.segments.map((seg, i) => {
+    const row = [i + 1, seg.op_start_name, seg.op_end_name, seg.distance_km, seg.gradient_pct,
+      seg.electrified ? "Yes" : "No", seg.country || ""];
+    LOCOMOTIVES.forEach(loco => row.push(segStateLabel(route.locomotives[loco].seg_states[i])));
+    return row;
+  });
+  const segSheet = XLSX.utils.aoa_to_sheet([segHeader, ...segRows]);
+  XLSX.utils.book_append_sheet(wb, segSheet, "Segments");
+
+  const safeName = `${route.op_start_name}_to_${route.op_end_name}`.replace(/[^A-Za-z0-9]+/g, "_").slice(0, 60);
+  XLSX.writeFile(wb, `route_${safeName}.xlsx`);
 }
 
 async function selectHubRoute(pair, hubIndex) {
