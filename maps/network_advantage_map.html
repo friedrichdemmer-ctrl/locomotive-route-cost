@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_9e4a64a849fb536c15f004126418c647 {
+                #map_5e3371204337168fc13ec20f613e7fe0 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -69,11 +69,15 @@
           <th style="text-align:right;">Traffic</th>
         </tr>
       </thead>
-      <tbody><tr><td>Stadler EURO9000</td><td style='text-align:right;'>10.0%</td><td style='text-align:right;'>0.6%</td></tr><tr><td>Siemens Vectron</td><td style='text-align:right;'>6.1%</td><td style='text-align:right;'>13.0%</td></tr><tr><td>Siemens Vectron Dual Mode</td><td style='text-align:right;'>15.4%</td><td style='text-align:right;'>41.5%</td></tr><tr><td>Stadler EuroDual</td><td style='text-align:right;'>1.9%</td><td style='text-align:right;'>3.5%</td></tr><tr><td>No locomotive feasible</td><td style='text-align:right;'>66.6%</td><td style='text-align:right;'>41.4%</td></tr></tbody>
+      <tbody><tr><td>Stadler EURO9000</td><td style='text-align:right;'>10.0%</td><td style='text-align:right;'>0.6%</td></tr><tr><td>Siemens Vectron</td><td style='text-align:right;'>6.1%</td><td style='text-align:right;'>13.0%</td></tr><tr><td>Siemens Vectron Dual Mode</td><td style='text-align:right;'>15.4%</td><td style='text-align:right;'>41.5%</td></tr><tr><td>Stadler EuroDual</td><td style='text-align:right;'>1.9%</td><td style='text-align:right;'>3.5%</td></tr><tr><td>None of these 4 feasible at 1,600t</td><td style='text-align:right;'>66.6%</td><td style='text-align:right;'>41.4%</td></tr></tbody>
     </table>
     <div style="font-size: 10px; color: #777; margin-top: 4px;">
       Share of route-km / freight-trains-per-year where each locomotive is the traffic-weighted
-      plurality winner among all four.
+      plurality winner among all four. "None of these 4 feasible" means none of EURO9000, Vectron,
+      Vectron Dual Mode or EuroDual can haul a 1,600t train on that segment alone, doubled, or with
+      a helper -- these four cover the bulk of real European rail freight, but real trains there are
+      likely lighter, or use a locomotive type outside this comparison; it does not mean the segment
+      carries no real traffic.
     </div>
     
     </div>
@@ -100,7 +104,7 @@
 
         function tooltipFor(rec, locomotive) {
             var share = rec.shares[locomotive] !== undefined ? rec.shares[locomotive] : 0;
-            var winnerLabel = rec.winner ? (LOCOMOTIVE_LABELS[rec.winner] || rec.winner) : "no locomotive feasible here";
+            var winnerLabel = rec.winner ? (LOCOMOTIVE_LABELS[rec.winner] || rec.winner) : "none of these 4 feasible at 1,600t";
             return rec.startName + " \u2013 " + rec.endName + "<br>" +
                    "Traffic: " + rec.traffic.toLocaleString() + " freight-trains/year (" + rec.nSegments + " segment(s))<br>" +
                    "Best performer: " + winnerLabel + "<br>" +
@@ -116,7 +120,7 @@
                 color: colorFor(rec, currentLocomotive), weight: rec.weight, opacity: 0.8,
             });
             layer.bindTooltip(tooltipFor(rec, currentLocomotive));
-            layer.addTo(map_9e4a64a849fb536c15f004126418c647);
+            layer.addTo(map_5e3371204337168fc13ec20f613e7fe0);
             return layer;
         });
 
@@ -139,14 +143,14 @@
     </script>
     
     
-            <div class="folium-map" id="map_9e4a64a849fb536c15f004126418c647" ></div>
+            <div class="folium-map" id="map_5e3371204337168fc13ec20f613e7fe0" ></div>
         
 </body>
 <script>
     
     
-            var map_9e4a64a849fb536c15f004126418c647 = L.map(
-                "map_9e4a64a849fb536c15f004126418c647",
+            var map_5e3371204337168fc13ec20f613e7fe0 = L.map(
+                "map_5e3371204337168fc13ec20f613e7fe0",
                 {
                     center: [48.83212121741019, 11.241821299975877],
                     crs: L.CRS.EPSG3857,
@@ -163,7 +167,7 @@
 
         
     
-            var tile_layer_1478ed08654e4a295d35636a8cc92121 = L.tileLayer(
+            var tile_layer_2a92f0c5eb9411ad31b3721002fc6983 = L.tileLayer(
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 {
   "minZoom": 0,
@@ -180,7 +184,7 @@
             );
         
     
-            tile_layer_1478ed08654e4a295d35636a8cc92121.addTo(map_9e4a64a849fb536c15f004126418c647);
+            tile_layer_2a92f0c5eb9411ad31b3721002fc6983.addTo(map_5e3371204337168fc13ec20f613e7fe0);
         
 </script>
 </html>
