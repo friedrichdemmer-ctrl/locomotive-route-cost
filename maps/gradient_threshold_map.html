@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_b01fe2f73c134f57c638d568f7b0783b {
+                #map_dd619f387cffa0439f6f61de3280a058 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -66,12 +66,44 @@
 
     
     
+    <style>
+      /* 2026-09-10, user-reported UI fix: the native slider fills accent-colour from 0 up to the
+         thumb and leaves the rest plain grey -- exactly backwards for what this control means here.
+         The zone BELOW the threshold is the "at or below" (grey route) zone, and the zone ABOVE it
+         is the highlighted "steeper than threshold" (red route) zone, so the track is now recoloured
+         to match the map's own two colours. A single-handle <input type="range"> can't be split-
+         coloured natively, so the track is painted with a linear-gradient recomputed on every input
+         event (see updateSliderFill in the script below) and the native track/thumb are replaced. */
+      #gradient-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        margin-top: 6px;
+        height: 6px;
+        border-radius: 3px;
+        outline: none;
+      }
+      #gradient-slider::-webkit-slider-runnable-track {
+        background: transparent; height: 6px; border-radius: 3px;
+      }
+      #gradient-slider::-moz-range-track {
+        background: transparent; height: 6px; border-radius: 3px;
+      }
+      #gradient-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; appearance: none;
+        width: 16px; height: 16px; margin-top: -5px; border-radius: 50%;
+        background: #ffffff; border: 2px solid #333; cursor: pointer;
+      }
+      #gradient-slider::-moz-range-thumb {
+        width: 14px; height: 14px; border-radius: 50%;
+        background: #ffffff; border: 2px solid #333; cursor: pointer;
+      }
+    </style>
     <div style="position: fixed; top: 56px; right: 20px; z-index: 1000; background: white;
                 padding: 10px 14px; border: 1px solid #999; border-radius: 4px; font-size: 13px;
                 max-width: 300px;">
       <b>Highlight lines steeper than</b><br>
-      <input id="gradient-slider" type="range" min="0" max="6.4" step="0.1" value="1.0"
-             style="width: 100%; margin-top: 6px;">
+      <input id="gradient-slider" type="range" min="0" max="6.4" step="0.1" value="1.0">
       <div style="display:flex; justify-content:space-between; font-size: 11px; color:#555;">
         <span>0%</span><span>6.4%</span>
       </div>
@@ -114,7 +146,7 @@
         var layers = edgeRecords.map(function(rec) {
             var layer = L.polyline(rec.coords, {color: BELOW_COLOR, weight: rec.weight, opacity: 0.8});
             layer.bindTooltip(tooltipFor(rec));
-            layer.addTo(map_b01fe2f73c134f57c638d568f7b0783b);
+            layer.addTo(map_dd619f387cffa0439f6f61de3280a058);
             return layer;
         });
 
@@ -140,6 +172,17 @@
             document.getElementById("km-readout").textContent =
                 Math.round(highlightedKm).toLocaleString() + " / " + Math.round(TOTAL_KM).toLocaleString() +
                 " km (" + kmPct.toFixed(1) + "%)";
+            updateSliderFill(threshold);
+        }
+
+        // Grey from 0 up to the threshold (the "at or below" zone), red beyond it (the highlighted
+        // "steeper than threshold" zone) -- same two colours as the routes on the map itself.
+        function updateSliderFill(threshold) {
+            var sliderMax = parseFloat(slider.max);
+            var pct = sliderMax > 0 ? (threshold / sliderMax * 100) : 0;
+            slider.style.background =
+                "linear-gradient(to right, " + BELOW_COLOR + " 0%, " + BELOW_COLOR + " " + pct + "%, " +
+                ABOVE_COLOR + " " + pct + "%, " + ABOVE_COLOR + " 100%)";
         }
 
         var slider = document.getElementById("gradient-slider");
@@ -149,14 +192,14 @@
     </script>
     
     
-            <div class="folium-map" id="map_b01fe2f73c134f57c638d568f7b0783b" ></div>
+            <div class="folium-map" id="map_dd619f387cffa0439f6f61de3280a058" ></div>
         
 </body>
 <script>
     
     
-            var map_b01fe2f73c134f57c638d568f7b0783b = L.map(
-                "map_b01fe2f73c134f57c638d568f7b0783b",
+            var map_dd619f387cffa0439f6f61de3280a058 = L.map(
+                "map_dd619f387cffa0439f6f61de3280a058",
                 {
                     center: [48.89878144037032, 10.601966344199159],
                     crs: L.CRS.EPSG3857,
@@ -173,7 +216,7 @@
 
         
     
-            var tile_layer_212627a80a55d1344942e5075121e993 = L.tileLayer(
+            var tile_layer_5181b6d5ccf384668bd4d809454d2aad = L.tileLayer(
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 {
   "minZoom": 0,
@@ -190,7 +233,7 @@
             );
         
     
-            tile_layer_212627a80a55d1344942e5075121e993.addTo(map_b01fe2f73c134f57c638d568f7b0783b);
+            tile_layer_5181b6d5ccf384668bd4d809454d2aad.addTo(map_dd619f387cffa0439f6f61de3280a058);
         
 </script>
 </html>
